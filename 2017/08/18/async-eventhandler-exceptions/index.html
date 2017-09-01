@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Blog</title>
+</head>
+<body>
+  <div class="container">
+    
+  <h1>async, EventHandler and Exceptions</h1>
+  <div class="content">
+    <p>Hopefully this will </p>
+<ul>
+<li>Help lost developers who dealt with a similar situation to myself</li>
+<li>Get feedback if this is a good approach to dealing with throwing exceptions in an <code>async</code> <code>EventHandler</code></li>
+</ul>
+<p><strong>Throwing Exceptions From Events</strong></p>
+<p>A developer would typically add an event to their class</p>
+<pre><code class="C#">public class MyClass
+{
+    public event EventHandler OnSomeEvent;
+
+    public void TriggerSomeEvent()
+    {
+        try
+        {
+            OnSomeEvent?.Invoke(this, new EventArgs());
+        }
+        catch(Exception ex)
+        {
+            // Handle exception things here
+        }
+    }
+}
+</code></pre>
+
+<p>A subscriber class may listen to the event using </p>
+<pre><code>thatClass.OnSomeEvent += (sender, args) =&gt; Console.WriteLine("Some event happened");
+</code></pre>
+<p>If the subscriber was to throw an exception, or it failed to handle an exception on it's own. It would be passed back to <code>TriggerSomeEvent</code> </p>
+<p><strong>Throwing Exceptions From <code>async</code> Events</strong></p>
+<p>This is where things get tricky. When a listener class subscribes with an async delegate, and throws an exception. it does no get handled by <code>TriggerSomeEvent</code></p>
+<pre><code class="C#">thatClass.OnSomeEvent += async (sender, args) =&gt; 
+{
+    await Task.Yield();
+    throw new Exception();
+}
+</code></pre>
+
+<p><code>TriggerSomeEvent</code> will never catch the event for a couple of reasons. The first being that the above delegate is <code>async void</code>, there's no <code>Task</code> to store the exception into, and that the delegate is not awaited. </p>
+<p>After exploring my my options, I considered using an <code>AsyncEventHandler</code></p>
+<pre><code class="C#">public delegate Task AsyncEventHandler(object sender, EventArgs e);
+// and
+public delegate Task AsyncEventHandler&lt;TEventArgs&gt;(object sender, TEventArgs e);
+</code></pre>
+
+<p>Compared to C#'s EventHander </p>
+<pre><code class="C#">public delegate void EventHandler(object sender, EventArgs e);
+// and
+public delegate void EventHandler&lt;TEventArgs&gt;(object sender, TEventArgs e);
+</code></pre>
+
+<p>The only difference being that AsyncEventHandler returns type <code>Task</code> instead of <code>void</code></p>
+<p>Invoking an <code>AsyncEventHandler</code> is slightly more complicated</p>
+<pre><code class="C#">public delegate Task AsyncEventHandler(object sender, EventArgs e);
+
+public class MyEventClass
+{
+    /// &lt;summary&gt;
+    /// A async event delegate
+    /// &lt;/summary&gt;
+    public AsyncEventHandler MyAsyncEvent;
+
+    /// &lt;summary&gt;
+    /// A typical event delegate
+    /// &lt;/summary&gt;
+    public EventHandler MyEvent;
+
+    /// &lt;summary&gt;
+    /// Invokes all listeners and awaits any that are async
+    /// &lt;/summary&gt;
+    /// &lt;returns&gt;&lt;/returns&gt;
+    public async Task TriggerAsyncEvent()
+    {
+        try
+        {
+            await Task.WhenAll(GetAwaitableAsyncEvents()).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Exceptions are caught here
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Invoked from &lt;see cref=&quot;TriggerAsyncEvent&quot;/&gt; to return async delegates to await
+    /// &lt;/summary&gt;
+    /// &lt;returns&gt;&lt;/returns&gt;
+    private IEnumerable&lt;Task&gt; GetAwaitableAsyncEvents()
+    {
+        foreach (var listener in MyAsyncEvent.GetInvocationList())
+            if (listener.DynamicInvoke(this, new EventArgs()) is Task task)
+                yield return task;
+    }
+
+    /// &lt;summary&gt;
+    /// Typical event invokation 
+    /// &lt;/summary&gt;
+    public void TriggerEvent()
+    {
+        try
+        {
+            MyEvent(this, new EventArgs());
+        }
+        catch (Exception ex)
+        {
+            // Exceptions are caught here
+        }
+    }
+}
+</code></pre>
+
+<p>In both cases, calling <code>TriggerEventAsync()</code> or  <code>TriggerEvent()</code> will handle exceptions thrown in either synchronous or asynchronous code blocks.</p>
+<p>I have written some tests with Nunit3 and .Net Core 1.1 to illustrate working examples of exceptions being correctly handled up the stack. </p>
+<p><a href="https://gist.github.com/NZSmartie/2b66924cffc98047f995c7f3813046eb">Handle Exceptions from async EventHandler with Nunit tests </a></p>
+<p>Feedback is appreciated!</p>
+  </div>
+
+  </div>
+</body>
+</html>
