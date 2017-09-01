@@ -2,8 +2,27 @@
 <html>
 <head>
   <title>My Blog</title>
+  
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script>
+  
+  <!-- UIkit JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.28/js/uikit.min.js" integrity="sha384-eceJelvi+b3VPxwN2yNtaxBvvei11+1DgfIRLNef53lKbj6yv4q++nbMqOY0CBQo" crossorigin="anonymous"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.28/js/uikit-icons.min.js" integrity="sha384-iY0wsbMpmtYBveFsxwrOmh5Jj64CxG7cJDufuoiZF+nBPCcQvPW4Vm8xWcU/nVm0" crossorigin="anonymous"></script> 
+  
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.28/css/uikit.min.css" />
+    <!-- Pygments code highlighting -->
+    <link rel="stylesheet" href=" /css/pygments-vs.css">
+
+  <link rel="stylesheet" href=" /css/uikit.css">
+  <link rel="stylesheet" href=" /css/main.css">
 </head>
 <body>
+  <div class="header uk-text-center">
+    <!-- <img src="/assets/images/emblem.svg" /> -->
+    <h1><a href="/">Roman Vaughan</a></h1>
+  </div>
   <div class="container">
     
   <h1>async, EventHandler and Exceptions</h1>
@@ -13,111 +32,118 @@
 <li>Help lost developers who dealt with a similar situation to myself</li>
 <li>Get feedback if this is a good approach to dealing with throwing exceptions in an <code>async</code> <code>EventHandler</code></li>
 </ul>
-<p><strong>Throwing Exceptions From Events</strong></p>
+<h2 id="throwing-exceptions-from-events">Throwing Exceptions From Events</h2>
 <p>A developer would typically add an event to their class</p>
-<pre><code class="C#">public class MyClass
-{
-    public event EventHandler OnSomeEvent;
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">class</span> <span class="nc">MyClass</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">event</span> <span class="n">EventHandler</span> <span class="n">OnSomeEvent</span><span class="p">;</span>
 
-    public void TriggerSomeEvent()
-    {
-        try
-        {
-            OnSomeEvent?.Invoke(this, new EventArgs());
-        }
-        catch(Exception ex)
-        {
-            // Handle exception things here
-        }
-    }
-}
-</code></pre>
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">TriggerSomeEvent</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">try</span>
+        <span class="p">{</span>
+            <span class="n">OnSomeEvent</span><span class="p">?.</span><span class="n">Invoke</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">new</span> <span class="n">EventArgs</span><span class="p">());</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// Handle exception things here</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
 
 <p>A subscriber class may listen to the event using </p>
-<pre><code>thatClass.OnSomeEvent += (sender, args) =&gt; Console.WriteLine("Some event happened");
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">thatClass</span><span class="p">.</span><span class="n">OnSomeEvent</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Some event happened&quot;</span><span class="p">);</span>
+</pre></div>
+
+
 <p>If the subscriber was to throw an exception, or it failed to handle an exception on it's own. It would be passed back to <code>TriggerSomeEvent</code> </p>
-<p><strong>Throwing Exceptions From <code>async</code> Events</strong></p>
+<h2 id="throwing-exceptions-from-async-events">Throwing Exceptions From <code>async</code> Events</h2>
 <p>This is where things get tricky. When a listener class subscribes with an async delegate, and throws an exception. it does no get handled by <code>TriggerSomeEvent</code></p>
-<pre><code class="C#">thatClass.OnSomeEvent += async (sender, args) =&gt; 
-{
-    await Task.Yield();
-    throw new Exception();
-}
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">thatClass</span><span class="p">.</span><span class="n">OnSomeEvent</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="p">=&gt;</span> 
+<span class="p">{</span>
+    <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="n">Yield</span><span class="p">();</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+
 
 <p><code>TriggerSomeEvent</code> will never catch the event for a couple of reasons. The first being that the above delegate is <code>async void</code>, there's no <code>Task</code> to store the exception into, and that the delegate is not awaited. </p>
 <p>After exploring my my options, I considered using an <code>AsyncEventHandler</code></p>
-<pre><code class="C#">public delegate Task AsyncEventHandler(object sender, EventArgs e);
-// and
-public delegate Task AsyncEventHandler&lt;TEventArgs&gt;(object sender, TEventArgs e);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">delegate</span> <span class="n">Task</span> <span class="nf">AsyncEventHandler</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">);</span>
+<span class="c1">// and</span>
+<span class="k">public</span> <span class="k">delegate</span> <span class="n">Task</span> <span class="n">AsyncEventHandler</span><span class="p">&lt;</span><span class="n">TEventArgs</span><span class="p">&gt;(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">TEventArgs</span> <span class="n">e</span><span class="p">);</span>
+</pre></div>
+
 
 <p>Compared to C#'s EventHander </p>
-<pre><code class="C#">public delegate void EventHandler(object sender, EventArgs e);
-// and
-public delegate void EventHandler&lt;TEventArgs&gt;(object sender, TEventArgs e);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">delegate</span> <span class="k">void</span> <span class="nf">EventHandler</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">);</span>
+<span class="c1">// and</span>
+<span class="k">public</span> <span class="k">delegate</span> <span class="k">void</span> <span class="n">EventHandler</span><span class="p">&lt;</span><span class="n">TEventArgs</span><span class="p">&gt;(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">TEventArgs</span> <span class="n">e</span><span class="p">);</span>
+</pre></div>
+
 
 <p>The only difference being that AsyncEventHandler returns type <code>Task</code> instead of <code>void</code></p>
 <p>Invoking an <code>AsyncEventHandler</code> is slightly more complicated</p>
-<pre><code class="C#">public delegate Task AsyncEventHandler(object sender, EventArgs e);
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">delegate</span> <span class="n">Task</span> <span class="nf">AsyncEventHandler</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">);</span>
 
-public class MyEventClass
-{
-    /// &lt;summary&gt;
-    /// A async event delegate
-    /// &lt;/summary&gt;
-    public AsyncEventHandler MyAsyncEvent;
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MyEventClass</span>
+<span class="p">{</span>
+    <span class="c1">/// &lt;summary&gt;</span>
+    <span class="c1">/// A async event delegate</span>
+    <span class="c1">/// &lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="n">AsyncEventHandler</span> <span class="n">MyAsyncEvent</span><span class="p">;</span>
 
-    /// &lt;summary&gt;
-    /// A typical event delegate
-    /// &lt;/summary&gt;
-    public EventHandler MyEvent;
+    <span class="c1">/// &lt;summary&gt;</span>
+    <span class="c1">/// A typical event delegate</span>
+    <span class="c1">/// &lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="n">EventHandler</span> <span class="n">MyEvent</span><span class="p">;</span>
 
-    /// &lt;summary&gt;
-    /// Invokes all listeners and awaits any that are async
-    /// &lt;/summary&gt;
-    /// &lt;returns&gt;&lt;/returns&gt;
-    public async Task TriggerAsyncEvent()
-    {
-        try
-        {
-            await Task.WhenAll(GetAwaitableAsyncEvents()).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            // Exceptions are caught here
-        }
-    }
+    <span class="c1">/// &lt;summary&gt;</span>
+    <span class="c1">/// Invokes all listeners and awaits any that are async</span>
+    <span class="c1">/// &lt;/summary&gt;</span>
+    <span class="c1">/// &lt;returns&gt;&lt;/returns&gt;</span>
+    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">TriggerAsyncEvent</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">try</span>
+        <span class="p">{</span>
+            <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="n">WhenAll</span><span class="p">(</span><span class="n">GetAwaitableAsyncEvents</span><span class="p">()).</span><span class="n">ConfigureAwait</span><span class="p">(</span><span class="k">false</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// Exceptions are caught here</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
 
-    /// &lt;summary&gt;
-    /// Invoked from &lt;see cref=&quot;TriggerAsyncEvent&quot;/&gt; to return async delegates to await
-    /// &lt;/summary&gt;
-    /// &lt;returns&gt;&lt;/returns&gt;
-    private IEnumerable&lt;Task&gt; GetAwaitableAsyncEvents()
-    {
-        foreach (var listener in MyAsyncEvent.GetInvocationList())
-            if (listener.DynamicInvoke(this, new EventArgs()) is Task task)
-                yield return task;
-    }
+    <span class="c1">/// &lt;summary&gt;</span>
+    <span class="c1">/// Invoked from &lt;see cref=&quot;TriggerAsyncEvent&quot;/&gt; to return async delegates to await</span>
+    <span class="c1">/// &lt;/summary&gt;</span>
+    <span class="c1">/// &lt;returns&gt;&lt;/returns&gt;</span>
+    <span class="k">private</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Task</span><span class="p">&gt;</span> <span class="n">GetAwaitableAsyncEvents</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">listener</span> <span class="k">in</span> <span class="n">MyAsyncEvent</span><span class="p">.</span><span class="n">GetInvocationList</span><span class="p">())</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">listener</span><span class="p">.</span><span class="n">DynamicInvoke</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">new</span> <span class="n">EventArgs</span><span class="p">())</span> <span class="k">is</span> <span class="n">Task</span> <span class="n">task</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="k">return</span> <span class="n">task</span><span class="p">;</span>
+    <span class="p">}</span>
 
-    /// &lt;summary&gt;
-    /// Typical event invokation 
-    /// &lt;/summary&gt;
-    public void TriggerEvent()
-    {
-        try
-        {
-            MyEvent(this, new EventArgs());
-        }
-        catch (Exception ex)
-        {
-            // Exceptions are caught here
-        }
-    }
-}
-</code></pre>
+    <span class="c1">/// &lt;summary&gt;</span>
+    <span class="c1">/// Typical event invokation </span>
+    <span class="c1">/// &lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">TriggerEvent</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">try</span>
+        <span class="p">{</span>
+            <span class="n">MyEvent</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">new</span> <span class="n">EventArgs</span><span class="p">());</span>
+        <span class="p">}</span>
+        <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// Exceptions are caught here</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
 
 <p>In both cases, calling <code>TriggerEventAsync()</code> or  <code>TriggerEvent()</code> will handle exceptions thrown in either synchronous or asynchronous code blocks.</p>
 <p>I have written some tests with Nunit3 and .Net Core 1.1 to illustrate working examples of exceptions being correctly handled up the stack. </p>

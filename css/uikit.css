@@ -1,0 +1,13 @@
+html {
+  color: #c9c9c9; }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #ffffff; }
+
+    :not(pre) > code {
+      background-color: #272727;
+      color: #dcdcdc; }
+
+      pre {
+        background-color: #1e1e1e;
+        color: #dcdcdc; }
