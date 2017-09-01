@@ -1,0 +1,24 @@
+@import 'common';
+
+body{
+    min-height: 100vh;
+    background: $brand-dark-background;
+}
+
+.header{
+    // img{
+    //     width: 7em;
+    // }
+    h1, h1 a,  h1 a:hover{
+        border-bottom: $brand-dark-secondary-alt thin solid;
+        color: $brand-dark-secondary;
+        text-decoration: none;
+        display: inline;
+        padding: 0 2em 0.2em;
+    }
+    margin-bottom: 1em;
+}
+
+.container{
+    padding: $default-padding;
+}

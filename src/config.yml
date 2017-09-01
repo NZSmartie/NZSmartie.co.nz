@@ -1,0 +1,6 @@
+project-name: Portfolio Website for NZSmartie
+base-path: /
+markdown:
+  extensions:
+    markdown.extensions.codehilite:
+      css_class: 'highlight'

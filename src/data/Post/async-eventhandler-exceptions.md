@@ -11,7 +11,7 @@ Hopefully this will
   - Help lost developers who dealt with a similar situation to myself
   - Get feedback if this is a good approach to dealing with throwing exceptions in an `async` `EventHandler`
 
-**Throwing Exceptions From Events**
+## Throwing Exceptions From Events
 
 A developer would typically add an event to their class
 
@@ -36,11 +36,13 @@ public class MyClass
 
 A subscriber class may listen to the event using 
 
-    thatClass.OnSomeEvent += (sender, args) => Console.WriteLine("Some event happened");
+```C#
+thatClass.OnSomeEvent += (sender, args) => Console.WriteLine("Some event happened");
+```
 
 If the subscriber was to throw an exception, or it failed to handle an exception on it's own. It would be passed back to `TriggerSomeEvent` 
 
-**Throwing Exceptions From `async` Events**
+## Throwing Exceptions From `async` Events
 
 This is where things get tricky. When a listener class subscribes with an async delegate, and throws an exception. it does no get handled by `TriggerSomeEvent`
 
