@@ -5,4 +5,10 @@
   <div class="content">
     {{ post.content }}
   </div>
+  <hr>
+{% endblock %}
+
+{% block footer %}
+{% include 'contact.html' %}
+{{ super() }}
 {% endblock %}

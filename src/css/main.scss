@@ -24,6 +24,14 @@ pre{
     color: #dcdcdc;
 }
 
+a, a:hover, a:visited{
+    color: $brand-dark-link
+}
+
+hr{
+    border-top-color: $brand-dark-background-alt;
+}
+
 .container{
     padding: $default-padding;
 }
@@ -63,5 +71,21 @@ header{
     }
     a:hover{
         color: $brand-dark-primary
+    }
+}
+
+footer{
+    color: $brand-dark-secondary-alt;
+    position: relative;
+    > p {
+        @media (max-width: 767px)  { 
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 768px) { 
+            position: absolute;
+            right: 0;
+            top:0;
+        }
     }
 }
