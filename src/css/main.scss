@@ -1,24 +1,44 @@
 @import 'common';
 
+@import url('https://fonts.googleapis.com/css?family=Heebo');
+
+
 body{
+    color: $text-color;
     min-height: 100vh;
     background: $brand-dark-background;
 }
 
-.header{
-    // img{
-    //     width: 7em;
-    // }
-    h1, h1 a,  h1 a:hover{
-        border-bottom: $brand-dark-secondary-alt thin solid;
-        color: $brand-dark-secondary;
-        text-decoration: none;
-        display: inline;
-        padding: 0 2em 0.2em;
-    }
-    margin-bottom: 1em;
+h1, h2, h3, h4, h5, h6{
+    color: $brand-dark-secondary;
+}
+
+:not(pre) > code{
+    background-color: #272727;
+    color: #dcdcdc;
+}
+
+pre{
+    padding: $default-padding;
+    background-color: #1e1e1e;
+    color: #dcdcdc;
 }
 
 .container{
     padding: $default-padding;
+}
+
+.header{
+    text-align: center;
+    > div {
+        display: inline-block;
+        img{
+            width: 100%;
+        }
+        h1{
+            @media (max-width: 575px) { font-size: 2.4rem; }
+
+            @media (min-width: 576px) { font-size: 3.8rem; }
+        }
+    }
 }
