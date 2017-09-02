@@ -3,3 +3,6 @@ path:
   for-each:
     post: session.query(Post).filter(Post.published != None).all()
 template: post
+context:
+  static:
+    page-title-suffix: "- Roman Vaughan"
