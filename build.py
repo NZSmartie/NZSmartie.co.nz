@@ -4,7 +4,7 @@ from scss import Compiler as ScssCompiler
 from pathlib import Path
 
 from statik.project import StatikProject
-from statik.generator import generate
+from statik.generator import generate as StatikGenerate
 
 import logging
 logger = logging.getLogger(__name__)
@@ -14,9 +14,7 @@ config = {
     'output': 'public/'
 }
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-
+def generate():
     # Generate css files using pyScss
     root = Path(config['root'])
     output = Path(config['output'])
@@ -42,4 +40,8 @@ if __name__ == "__main__":
             out.write_text((root/ file).read_text())
 
     # Generate HTML files using Statik
-    generate(config['root'], output_path=config['output'], in_memory=False, safe_mode=False)
+    StatikGenerate(config['root'], output_path=config['output'], in_memory=False, safe_mode=False)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    generate()
