@@ -1,15 +1,35 @@
-body {
-  min-height: 100vh;
-  background: #1a1a1a; }
+@import url('https://fonts.googleapis.com/css?family=Heebo'); 
+  body {
+    color: #c9c9c9;
+    min-height: 100vh;
+    background: #1a1a1a; }
 
-  .header {
-    margin-bottom: 1em; }
-    .header h1, .header h1 a, .header h1 a:hover {
-      border-bottom: #bfbfbf thin solid;
-      color: #ffffff;
-      text-decoration: none;
-      display: inline;
-      padding: 0 2em 0.2em; }
+    h1, h2, h3, h4, h5, h6 {
+      color: #ffffff; }
 
-.container {
-  padding: 0.3em; }
+      :not(pre) > code {
+        background-color: #272727;
+        color: #dcdcdc; }
+
+        pre {
+          padding: 0.75rem;
+          background-color: #1e1e1e;
+          color: #dcdcdc; }
+
+          .container {
+            padding: 0.75rem; }
+
+            .header {
+              text-align: center; }
+              .header > div {
+                display: inline-block; }
+                .header > div img {
+                  width: 100%; }
+                  @media (max-width: 575px) {
+                    .header > div h1 {
+                      font-size: 2.4rem;   }
+}
+                    @media (min-width: 576px) {
+                      .header > div h1 {
+                        font-size: 3.8rem;   }
+}
