@@ -16,27 +16,33 @@
           background-color: #1e1e1e;
           color: #dcdcdc; }
 
-          .container {
-            padding: 0.75rem; }
+          a, a:hover, a:visited {
+            color: #ff7e7c; }
 
-            header {
-              text-align: center; }
-              header > div {
-                display: inline-block; }
-                header > div img {
-                  width: 100%; }
-                  header > div h1 {
-                    font-family: 'Heebo', sans-serif;
-                    font-weight: 700; }
-                    @media (max-width: 575px) {
+            hr {
+              border-top-color: #272727; }
+
+              .container {
+                padding: 0.75rem; }
+
+                header {
+                  text-align: center; }
+                  header > div {
+                    display: inline-block; }
+                    header > div img {
+                      width: 100%; }
                       header > div h1 {
-                        font-size: 2rem;
-                        letter-spacing: 0.1rem;   }
+                        font-family: 'Heebo', sans-serif;
+                        font-weight: 700; }
+                        @media (max-width: 575px) {
+                          header > div h1 {
+                            font-size: 2rem;
+                            letter-spacing: 0.1rem;   }
 }
-                      @media (min-width: 576px) {
-                        header > div h1 {
-                          font-size: 3rem;
-                          letter-spacing: 0.2rem;   }
+                          @media (min-width: 576px) {
+                            header > div h1 {
+                              font-size: 3rem;
+                              letter-spacing: 0.2rem;   }
 }
 
   .contact .fa {
@@ -47,3 +53,17 @@
       text-decoration: none; }
       .contact a:hover {
         color: #e70000; }
+
+  footer {
+    color: #bfbfbf;
+    position: relative; }
+    @media (max-width: 767px) {
+      footer > p {
+        margin-top: 1rem;   }
+}
+      @media (min-width: 768px) {
+        footer > p {
+          position: absolute;
+          right: 0;
+          top: 0;   }
+}
