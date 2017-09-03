@@ -89,3 +89,20 @@ footer{
         }
     }
 }
+
+.content{
+    .toclink, .toclink:hover, .toclink:active{
+        color: $brand-dark-secondary;
+        text-decoration: none;
+    }
+    .toclink:hover::after{
+        color: $brand-dark-link;
+        content: "\f0c1";
+        font: normal normal normal 14px/1 FontAwesome;
+        font-size: 1.4rem;
+        margin-left: 1rem;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}

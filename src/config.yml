@@ -4,3 +4,5 @@ markdown:
   extensions:
     markdown.extensions.codehilite:
       css_class: 'highlight'
+    markdown.extensions.toc:
+      anchorlink: true
