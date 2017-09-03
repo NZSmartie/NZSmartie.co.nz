@@ -30,7 +30,7 @@
 <li>Help lost developers who dealt with a similar situation to myself</li>
 <li>Get feedback if this is a good approach to dealing with throwing exceptions in an <code>async</code> <code>EventHandler</code></li>
 </ul>
-<h2 id="throwing-exceptions-from-events">Throwing Exceptions From Events</h2>
+<h2 id="throwing-exceptions-from-events"><a class="toclink" href="#throwing-exceptions-from-events">Throwing Exceptions From Events</a></h2>
 <p>A developer would typically add an event to their class</p>
 <div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">class</span> <span class="nc">MyClass</span>
 <span class="p">{</span>
@@ -57,7 +57,7 @@
 
 
 <p>If the subscriber was to throw an exception, or it failed to handle an exception on it's own. It would be passed back to <code>TriggerSomeEvent</code> </p>
-<h2 id="throwing-exceptions-from-async-events">Throwing Exceptions From <code>async</code> Events</h2>
+<h2 id="throwing-exceptions-from-async-events"><a class="toclink" href="#throwing-exceptions-from-async-events">Throwing Exceptions From <code>async</code> Events</a></h2>
 <p>This is where things get tricky. When a listener class subscribes with an async delegate, and throws an exception. it does no get handled by <code>TriggerSomeEvent</code></p>
 <div class="highlight"><pre><span></span><span class="n">thatClass</span><span class="p">.</span><span class="n">OnSomeEvent</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="p">=&gt;</span> 
 <span class="p">{</span>

@@ -67,3 +67,16 @@
           right: 0;
           top: 0;   }
 }
+
+  .content .toclink, .content .toclink:hover, .content .toclink:active {
+    color: #ffffff;
+    text-decoration: none; }
+    .content .toclink:hover::after {
+      color: #ff7e7c;
+      content: "";
+      font: normal normal normal 14px / 1 FontAwesome;
+      font-size: 1.4rem;
+      margin-left: 1rem;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale; }
