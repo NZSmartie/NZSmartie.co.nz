@@ -30,6 +30,7 @@ a, a:hover, a:visited{
 }
 
 hr{
+    margin-top: 2rem;
     border-top-color: $brand-dark-background-alt;
 }
 
@@ -78,7 +79,17 @@ header{
 footer{
     color: $brand-dark-secondary-alt;
     position: relative;
-    > p {
+    .contact{
+        margin-top: -1.4rem;
+        a:hover{
+            color: $brand-dark-link;
+        }
+    }
+    .top {
+        margin-top: -7rem;
+        background: $brand-dark-background;
+    }
+    .meta {
         @media (max-width: 767px)  { 
             margin-top: 1rem;
         }
@@ -106,4 +117,10 @@ footer{
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+}
+
+.btn-outline-dark:hover{
+    color: $brand-dark-link;
+    background: $brand-dark-background;
+    border-color: $brand-dark-link;
 }
