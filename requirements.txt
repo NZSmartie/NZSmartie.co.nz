@@ -1,2 +1,2 @@
-statik
+statik>=0.18
 pyScss
