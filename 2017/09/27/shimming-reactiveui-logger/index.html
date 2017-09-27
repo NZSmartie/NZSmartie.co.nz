@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Shimming ReactiveUI's Log&lt;T&gt;() To Support ASPNet's ILogger&lt;T&gt; - Roman Vaughan</title>
+
+  <!-- Boostrap v4 -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+  <!-- Pygments code highlighting -->
+  <link rel="stylesheet" href=" /css/pygments-vs.css">
+
+  <link rel="stylesheet" href=" /css/uikit.css">
+  <link rel="stylesheet" href=" /css/main.css">
+</head>
+<body>
+  
+  <div class="container">
+    
+  <h1><a href="/"><img src="/assets/images/emblem.svg" /></a> Shimming ReactiveUI's Log&lt;T&gt;() To Support ASPNet's ILogger&lt;T&gt;</h1>
+  <div class="content">
+    <p>Picking up Xamarin app development again after some time and decided to tackle the world of Reactive programming that I fell in love with from when I was building Angular2 web apps using reactive extensions.</p>
+<p>Having recently developed server side with ASP.Net Core, I got use to using <code>Ilogger&lt;T&gt;</code> from <code>Microsoft.Extensions.Logging.Abstractions</code>. Was quite handy having a consistant <code>ILogger</code> interface everywhere that was immediately compatable with many 3rd party loggers (NLog, Serilog, et al) and even built some libraries of my own that use it that aren't solely intended for ASP.Net. </p>
+<p>Whilst picking up <a href="https://reactiveui.net/">ReactiveUI</a>, they provide their own Service Locator inside of <a href="https://github.com/reactiveui/splat">Splat</a> and provide their own logging classes that aren't directly compatable with <code>ILogger&lt;T&gt;</code> (that I wasn't ready to let go of).</p>
+<p><a href="https://reactiveui.net/docs/handbook/logging/">ReactiveUI's Handbook</a> instructs developers to add <code>IEnableLogging</code> to their classes they wish to log from. And by doing so, they gain access to <code>this.Log()</code> thanks the extension method:</p>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">static</span> <span class="n">IFullLogger</span> <span class="n">Log</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">this</span> <span class="n">T</span> <span class="n">This</span><span class="p">)</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IEnableLogger</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+</pre></div>
+
+
+<p>This was done so that your class name (through accessing <code>T</code>) would be included in the logger's output to help keep track of where the log was issued. </p>
+<p>Seeing how this was done similarly to <code>ILogger&lt;T&gt;</code> which is really just <code>ILogger</code>. I wanted to bridge the gap by implementing ASP.Net's ILogger<T> and ReactiveUI's Splat logging. Which first involes implementing ILogger<T> </p>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">class</span> <span class="nc">ReactiveLogger</span><span class="p">&lt;</span><span class="n">TClass</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">ILogger</span><span class="p">&lt;</span><span class="n">TClass</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="n">IDisposable</span> <span class="n">BeginScope</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">&gt;(</span><span class="n">TState</span> <span class="n">state</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsEnabled</span><span class="p">(</span><span class="n">LogLevel</span> <span class="n">logLevel</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="n">Log</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">&gt;(</span><span class="n">LogLevel</span> <span class="n">logLevel</span><span class="p">,</span> <span class="n">EventId</span> <span class="n">eventId</span><span class="p">,</span> <span class="n">TState</span> <span class="n">state</span><span class="p">,</span> <span class="n">Exception</span> <span class="n">exception</span><span class="p">,</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">,</span> <span class="n">Exception</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">formatter</span><span class="p">)</span>
+    <span class="p">{</span>        
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>   
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Taking a peek into how <code>Microsoft.Extensions.Logging.Console</code> processes <code>public void Log&lt;TState&gt;( ... )</code> I started out by checking <code>IsEnabled()</code>, follwoed by null-checking <code>formatter</code> and then creating our error message by the supplied <code>formatter</code>, <code>state</code> and <code>extenction</code> parameters.</p>
+<div class="highlight"><pre><span></span>    <span class="k">if</span> <span class="p">(!</span><span class="n">IsEnabled</span><span class="p">(</span><span class="n">logLevel</span><span class="p">))</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">formatter</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">formatter</span><span class="p">));</span>
+
+    <span class="kt">var</span> <span class="n">message</span> <span class="p">=</span> <span class="n">formatter</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="p">&amp;&amp;</span> <span class="n">exception</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+        <span class="k">return</span><span class="p">;</span>
+</pre></div>
+
+
+<p>You may have noticed a lack of <code>IEnableLogging</code> interface on <code>ReactiveLogger</code>. That's because the logic behind the <code>Log&lt;T&gt;()</code> extension method uses the name of the invoking class. In this case, it'd end up always being <code>ReactiveLogger</code>. </p>
+<p>Not very helpful if there's dozens of classes being provided with this logger...</p>
+<p>Digging into Splat's <code>ILogManager</code> (which gets invoked on behalf of <code>Log&lt;T&gt;()</code>) it retreives a memory-cached <code>IFullLogger</code> initialised with the name of the invoking class. </p>
+<p>So lets copy this bahaviour</p>
+<div class="highlight"><pre><span></span>    <span class="c1">// Get Splat&#39;s ILogManager</span>
+    <span class="kt">var</span> <span class="n">factory</span> <span class="p">=</span> <span class="p">(</span><span class="n">Splat</span><span class="p">.</span><span class="n">ILogManager</span><span class="p">)</span><span class="n">Splat</span><span class="p">.</span><span class="n">Locator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetService</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">Splat</span><span class="p">.</span><span class="n">ILogManager</span><span class="p">))</span>
+        <span class="p">??</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">Exception</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;{nameof(Splat.ILogManager)} was not found. Please ensure your dependency resolver is configured correctly.&quot;</span><span class="p">);</span>
+
+    <span class="c1">// Get a logger to reprecent our TClass</span>
+    <span class="kt">var</span> <span class="n">logger</span> <span class="p">=</span> <span class="n">factory</span><span class="p">.</span><span class="n">GetLogger</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">TClass</span><span class="p">));</span>
+</pre></div>
+
+
+<p>What's <code>Splat.Locator.Current</code> you ask? It's ReactiveUI's prefered method of getting services required throughout your application without tightly coupling everyhting. </p>
+<blockquote>
+<p><strong>Note:</strong> You're welcome to replace this, but make sure you're populating services requried by ReactiveUI</p>
+</blockquote>
+<p>We're asking Splat's <code>ILogManager</code> to provide us with a <code>IFullLogger</code> (in the same way <code>Log&lt;T&gt;()</code> does), passing in the the target class's type provided through templating.</p>
+<p>All that's left is to invoke the correct logginer method.</p>
+<div class="highlight"><pre><span></span>    <span class="k">switch</span> <span class="p">(</span><span class="n">logLevel</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Trace</span><span class="p">:</span>
+            <span class="c1">// This is very verbose and can be considered equally annoying as LogLevel.Debug in this case.</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Debug</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">DebugException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+            <span class="k">else</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">Debug</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Information</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">InfoException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+            <span class="k">else</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Warning</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">WarnException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+            <span class="k">else</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">Warn</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">ErrorException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+            <span class="k">else</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Critical</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">FatalException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+            <span class="k">else</span>
+                <span class="n">logger</span><span class="p">.</span><span class="n">Fatal</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">None</span><span class="p">:</span>
+            <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<p>Where We call the appropiate logging methods in <code>IFullLogger</code> based on our <code>logLevel</code>, if our <code>exception</code> is null and the output of the formatted message. </p>
+<h2 id="the-completed-reactivelogger"><a class="toclink" href="#the-completed-reactivelogger">The Completed ReactiveLogger</a></h2>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">class</span> <span class="nc">ReactiveLogger</span><span class="p">&lt;</span><span class="n">TClass</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">ILogger</span><span class="p">&lt;</span><span class="n">TClass</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="n">IDisposable</span> <span class="n">BeginScope</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">&gt;(</span><span class="n">TState</span> <span class="n">state</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Scopes haven&#39;t been considered yet and I&#39;ll update this article when I need it. </span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsEnabled</span><span class="p">(</span><span class="n">LogLevel</span> <span class="n">logLevel</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">true</span><span class="p">;</span> <span class="c1">// Up too you on how you decide to disable logging</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="n">Log</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">&gt;(</span><span class="n">LogLevel</span> <span class="n">logLevel</span><span class="p">,</span> <span class="n">EventId</span> <span class="n">eventId</span><span class="p">,</span> <span class="n">TState</span> <span class="n">state</span><span class="p">,</span> <span class="n">Exception</span> <span class="n">exception</span><span class="p">,</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">TState</span><span class="p">,</span> <span class="n">Exception</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">formatter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(!</span><span class="n">IsEnabled</span><span class="p">(</span><span class="n">logLevel</span><span class="p">))</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">formatter</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">formatter</span><span class="p">));</span>
+
+        <span class="kt">var</span> <span class="n">message</span> <span class="p">=</span> <span class="n">formatter</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="p">&amp;&amp;</span> <span class="n">exception</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="k">return</span><span class="p">;</span>
+
+        <span class="c1">// Get Splat&#39;s ILogManager</span>
+        <span class="kt">var</span> <span class="n">factory</span> <span class="p">=</span> <span class="p">(</span><span class="n">Splat</span><span class="p">.</span><span class="n">ILogManager</span><span class="p">)</span><span class="n">Splat</span><span class="p">.</span><span class="n">Locator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetService</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">Splat</span><span class="p">.</span><span class="n">ILogManager</span><span class="p">))</span>
+            <span class="p">??</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">Exception</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;{nameof(Splat.ILogManager)} was not found. Please ensure your dependency resolver is configured correctly.&quot;</span><span class="p">);</span>
+
+        <span class="c1">// Get a logger to reprecent our TClass</span>
+        <span class="kt">var</span> <span class="n">logger</span> <span class="p">=</span> <span class="n">factory</span><span class="p">.</span><span class="n">GetLogger</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">TClass</span><span class="p">));</span>
+
+        <span class="k">switch</span> <span class="p">(</span><span class="n">logLevel</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Trace</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Debug</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">DebugException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+                <span class="k">else</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">Debug</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Information</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">InfoException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+                <span class="k">else</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Warning</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">WarnException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+                <span class="k">else</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">Warn</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Error</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">ErrorException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+                <span class="k">else</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">Critical</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">exception</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">FatalException</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">,</span> <span class="n">exception</span><span class="p">);</span>
+                <span class="k">else</span>
+                    <span class="n">logger</span><span class="p">.</span><span class="n">Fatal</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;[{eventId.Id}]: {message}&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">LogLevel</span><span class="p">.</span><span class="n">None</span><span class="p">:</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="bootstrapping-splats-service-locator"><a class="toclink" href="#bootstrapping-splats-service-locator">Bootstrapping Splat's Service Locator</a></h2>
+<p>When it comes to bootstrapping Splat's service locator, it gets a little too verbose as you're forced to register multiple logger types:</p>
+<div class="highlight"><pre><span></span>    <span class="n">Locator</span><span class="p">.</span><span class="n">CurrentMutable</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">Microsoft</span><span class="p">.</span><span class="n">Extensions</span><span class="p">.</span><span class="n">Logging</span><span class="p">.</span><span class="n">ILogger</span><span class="p">&lt;</span><span class="n">MyService</span><span class="p">&gt;&gt;(()</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="n">ReactiveLogger</span><span class="p">&lt;</span><span class="n">MyService</span><span class="p">&gt;());</span>
+    <span class="n">Locator</span><span class="p">.</span><span class="n">CurrentMutable</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">Microsoft</span><span class="p">.</span><span class="n">Extensions</span><span class="p">.</span><span class="n">Logging</span><span class="p">.</span><span class="n">ILogger</span><span class="p">&lt;</span><span class="n">MyotherService</span><span class="p">&gt;&gt;(()</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="n">ReactiveLogger</span><span class="p">&lt;</span><span class="n">MyOtherService</span><span class="p">&gt;());</span>
+    <span class="c1">// ...</span>
+</pre></div>
+
+
+<p>Time to make life a little easier (and reading on your eyes) by using extension methods!</p>
+<div class="highlight"><pre><span></span><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">SplatLocatorExtensions</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="n">Splat</span><span class="p">.</span><span class="n">IMutableDependencyResolver</span> <span class="n">RegisterLogger</span><span class="p">(</span><span class="k">this</span> <span class="n">Splat</span><span class="p">.</span><span class="n">IMutableDependencyResolver</span> <span class="n">services</span><span class="p">,</span> <span class="n">Type</span> <span class="n">type</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Turn ReactiveLogger&lt;&gt; into ReactiveLogger&lt;type&gt;</span>
+        <span class="kt">var</span> <span class="n">genericReactiveLogger</span> <span class="p">=</span> <span class="k">typeof</span><span class="p">(</span><span class="n">ReactiveLogger</span><span class="p">&lt;&gt;).</span><span class="n">MakeGenericType</span><span class="p">(</span><span class="n">type</span><span class="p">);</span>
+        <span class="c1">// Turn ILogger&lt;&gt; into ILogger&lt;type&gt;</span>
+        <span class="kt">var</span> <span class="n">genericLogger</span> <span class="p">=</span> <span class="k">typeof</span><span class="p">(</span><span class="n">ILogger</span><span class="p">&lt;&gt;).</span><span class="n">MakeGenericType</span><span class="p">(</span><span class="n">type</span><span class="p">);</span>
+
+        <span class="c1">// Register it!</span>
+        <span class="n">services</span><span class="p">.</span><span class="n">Register</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">Activator</span><span class="p">.</span><span class="n">CreateInstance</span><span class="p">(</span><span class="n">genericReactiveLogger</span><span class="p">),</span> <span class="n">genericLogger</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">services</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="n">Splat</span><span class="p">.</span><span class="n">IMutableDependencyResolver</span> <span class="n">RegisterLogger</span><span class="p">&lt;</span><span class="n">TType</span><span class="p">&gt;(</span><span class="k">this</span> <span class="n">Splat</span><span class="p">.</span><span class="n">IMutableDependencyResolver</span> <span class="n">services</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Much simpler as we&#39;re dealing with templated types rather than `Type` parameters.</span>
+        <span class="n">services</span><span class="p">.</span><span class="n">Register</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="n">ReactiveLogger</span><span class="p">&lt;</span><span class="n">TType</span><span class="p">&gt;(),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">ILogger</span><span class="p">&lt;</span><span class="n">TType</span><span class="p">&gt;));</span>
+        <span class="k">return</span> <span class="n">services</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>This allows us to quickly register logging for services that need ILogger<T> like this:</p>
+<div class="highlight"><pre><span></span>    <span class="n">Locator</span><span class="p">.</span><span class="n">CurrentMutable</span><span class="p">.</span><span class="n">RegisterLogger</span><span class="p">&lt;</span><span class="n">MyService</span><span class="p">&gt;()</span>
+                          <span class="p">.</span><span class="n">RegisterLogger</span><span class="p">&lt;</span><span class="n">MyOtherService</span><span class="p">&gt;()</span>
+                          <span class="c1">// ...</span>
+</pre></div>
+
+
+<p>This allows for us to easily use ASP.Net's <code>ILogger&lt;T&gt;</code> in our Xamarin app when using ReactiveUI as our reactive framework.</p>
+  </div>
+  <hr>
+
+  </div>
+  <footer class="container text-center">
+  
+<button type="button" class="top btn btn-outline-dark" onclick="window.scrollTo(0, 0)">
+  <i class="fa  fa-chevron-up" aria-hidden="true"></i>
+  Top
+</button>
+<div class="contact">
+    <a href="https://twitter.com/NZSmartie"><i class="fa fa-twitter" aria-hidden="true"></i><span class="sr-only">My Twitter</span></a>
+    <a href="https://github.com/NZSmartie"><i class="fa fa-github" aria-hidden="true"></i><span class="sr-only">My Github</span></a>
+    <a href="https://keybase.io/nzsmartie"><i class="fa fa-keybase" aria-hidden="true"></i><span class="sr-only">My Keybase</span></a>
+    <a href="https://hackaday.io/NZSmartie"><i class="fa fa-hackaday" aria-hidden="true"></i><span class="sr-only">My Hack A Day I O Profile</span></a>
+</div>
+
+    <p class="meta text-right">
+      Proudly built with <a href="https://getstatik.com/">Statik</a>
+      <br />
+      and hosted on <a href="https://help.github.com/articles/what-is-github-pages/">GitHub Pages</a>
+    </p>
+    
+
+  </footer>
+</body>
+</html>
