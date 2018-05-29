@@ -41,7 +41,7 @@ public class ReactiveLogger<TClass> : ILogger<TClass>
 }
 ```
 
-Taking a peek into how `Microsoft.Extensions.Logging.Console` processes `public void Log<TState>( ... )` I started out by checking `IsEnabled()`, follwoed by null-checking `formatter` and then creating our error message by the supplied `formatter`, `state` and `extenction` parameters.
+Taking a peek into how `Microsoft.Extensions.Logging.Console` processes `public void Log<TState>( ... )` I started out by checking `IsEnabled()`, followed by null-checking `formatter` and then creating our error message by the supplied `formatter`, `state` and `extenction` parameters.
 ```C#
     if (!IsEnabled(logLevel))
         return;
