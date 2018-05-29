@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>My adventures with CoAP - Roman Vaughan</title>
+
+  <!-- Boostrap v4 -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+  <!-- Pygments code highlighting -->
+  <link rel="stylesheet" href=" /css/pygments-vs.css">
+
+  <link rel="stylesheet" href=" /css/uikit.css">
+  <link rel="stylesheet" href=" /css/main.css">
+</head>
+<body>
+  
+  <div class="container">
+    
+  <h1><a href="/"><img src="/assets/images/emblem.svg" /></a> My adventures with CoAP</h1>
+  <div class="content">
+    <h1 id="the-story-behind-wiring-coapnet"><a class="toclink" href="#the-story-behind-wiring-coapnet">The Story Behind Wiring CoAP.Net</a></h1>
+<p>The Internet of Things fasinates me. Being able to control or monitor physical devices from my mobile phone or connect them with some home automation is fun to think about and cool to show off in practice. Making that a reality is much more of a journey than it needs to be. Where I'm also making that journey incredibly hard on myself mostly because I wanted to do it "right".</p>
+<p>There are multiple ways if getting your mobile app to talk to an embedded device (like an Arduino, or ESP8266). The more common ways I kept coming across in the maker community is using HTTP web servers, or MQTT.</p>
+<p>Web servers over HTTP as you might guess isn't ideal for embedded systems (well not like it used to be) as HTTP has evolved to keep up with modern internet browsers on fast networks and using powerful CPUs. Having an Arduino talk to a webserver ends up being clunky, requiring a bit too much of it's limited RAM, and a whole bunch of other stuff.</p>
+<p>MQTT on the side is actually designed for low power, constrained devices. Providing a simple publish and subscribe messaging protocol. There isn't much to say as MQTT is to the point and it works well for simple setups.</p>
+<p>I wasn't particularly impressed with either of the two options available, most notably, they use stateful connections. If a device needs to quickly send out short messages, it must do the whole connection negotiation thing. Not including the TLS handshake. Secondly, MQTT doesn't have much in the way of specifying data formats if it's anything beyond simple values. Making interoperability between platforms or vendors difficult or require prior knowledge.</p>
+<p>More research landed me with a fairly new protocol called <em>Constrained Application Protocol</em> or <em>CoAP</em>. Backed by a IETF proposed standard <em>RFC 7252</em>. It's a very light weight protocol that takes the RESTful model from HTTP (including an additional <em>OBSERVE</em> verb that lets clients subscribe to a resources). Options (AKA <em>headers</em>) are compressed in a easy to parse manner for low memory devices. </p>
+<p>What really sets CoAP apart, is that it's transport agnostic, intended to be used over any unreliable transport. Although the specification does reference UDP as the main transport. If there is any transport that support addressing schemes (Bluetooth LE, Zigbee, 6LowPAN), then CoAP can be used over it. Not only to mention UDP, CoAP supports TCP as well but I have yet to read up on that.</p>
+<p>Regarding security, TLS isn't exactly applicable. Amazingly, TLS has a UDP variation called <em>Datagram Transport Layer Security</em> or <em>DTLS</em>. Which is based on TLS 1.0 and TLS 1.2. Additional parameters are required for using TLS over a stateless connection, such as a cookie (provided by the server). </p>
+<h2 id="so-why-did-i-chose-coap-any-way"><a class="toclink" href="#so-why-did-i-chose-coap-any-way">So why did I chose CoAP any way?</a></h2>
+<p>CoAP has a lot to offer out of the box which quickly gets you started building IoT solutions. Not tied to any specific vendor or mobile app framework or IoT gateway or cloud infrastructure. Much like HTTP, it's gives applications a familiar RESTful API for accessing everything needed from sensor data, to setting configuration on the device. More importantly, it provides a mechanism for device discovery of any publicly accessible resources in a standardized manner.</p>
+<p>Simply put, the device doesn't need to know about your phone, and your phone doesn't need to know about the device (sound familiar?). They will find each other using Multicast that you get with UDP. Very similar to how a Google Chromecast is found by your phone or browser.</p>
+<p>The key benefits are</p>
+<ul>
+<li>Designed for constrained environments (low memory, power, network,etc)</li>
+<li>Familiar REST API</li>
+<li>support for many data content formats (application/json, application/xml, etc)</li>
+<li>Support for resource discovery (through CoRE Link Format <code>/.well-known/core</code> <em>RFC 6970</em>)</li>
+<li>works over UDP or TCP</li>
+<li>A Security layer is support though DTLS (based on TLS)</li>
+</ul>
+<h2 id="working-with-coap"><a class="toclink" href="#working-with-coap">Working with CoAP</a></h2>
+<p>I started to write my own IoT minimal framework with a few key points in mind</p>
+<ul>
+<li>Something that was easy to set up and start using. (Think Zero-Config)</li>
+<li>Provides examples of Clean UI/UX for the consumer to use.</li>
+<li>Plenty of examples of different scenarios of the framework. <ul>
+<li>Garage Door</li>
+<li>Temperature control</li>
+</ul>
+</li>
+<li>Works on cheap and easy to get hardware<ul>
+<li>ESP8266 (with limitations), ESP32, Arduino, etc...</li>
+</ul>
+</li>
+</ul>
+<p>Quickly, I encountered a minor issue of a serious lack of tools for developemnt and testing that just worked... </p>
+<p>For example, There is a (now unusable) Firefox plugin, <em>Copper (Cu)</em>, which was was a simple to the point REST client with a range of settings for tweaking messages. It worked, but wasn't very practical for development. And now you need to run an out of date portable Firefox to use it. </p>
+<p>LibCoAP provide a cli, <code>coap-client</code>, but that's mostly useful for scripting or cli based testing.</p>
+<p>So I set out to build my own tool. How hard can it be?</p>
+<h2 id="my-first-misadventure"><a class="toclink" href="#my-first-misadventure">My First Misadventure</a></h2>
+<p>IETF RFCs often have associated IANA registries, that is, a living part of the RFC allowing future extensions to the RFC. CoAP has an IETF registry for content formats, resource types and interface types.</p>
+<p>That is where I had discovered <em>Open Inter-Connect</em> (OIC), an Iot specification produced by the OpenConnectivity Foundation (OCF). An alliance of multiple companies with the desire to make consumer IoT devices interoperable with each other out of the box.</p>
+<p>Sweet!</p>
+<p>First impressions of OIC showed extensive coverage of discovery, providing a large set of primitives for most physical devices, and several other well though out aspects. It covers Security, grouping devices and device management.</p>
+<p>First step was to decide on the framework used for developing this magical tool. .Net is my strong point and naturally, decided Xamarin.Forms would be a good way to build a cross platform application.</p>
+<p>I needed a CoAP library, to build a OIC library... Which is where things fell short. There existed a coupld of CoAP libraries, targeting .Net Framework and assumed a UDP connection. And at the time, didn't support .Net Standard (more on that later). So i set out to write my own CoAP library. </p>
+<p>This is around the time .Net Portable was still a thing and Xamarin just started to support .Net Standard. I'm so glad .Net Portable is behind us now.</p>
+<p>I faced a couple of challenges when building my own CoAP library, learning about .Net Standard, building a reliable network stack for CoAP. Considering what the API would look like. Setting up tests. Testing thouroughly. Learning that my tests still aren't enough. </p>
+<p>Did you know that <code>List&lt;T&gt;.Sort()</code> and <code>IEunumerable&lt;T&gt;.OrderBy()</code> give different results...?</p>
+<p>Developing a OIC library also had a lot more challenges of it's own. Forking JSON.Net to support CBOR (effectively binary json with tags), code generation of the primitives, and more importantly, a lack of physical devices to play with. </p>
+<p>My first Cross platform app, OICExplorer, turned into a sad story. Xamarin.Forms had a lot of brick walled issues. Trying to develop a nice User Experience, while following the native platform's User Interface guidelines (ie. Material Design, UWP, iOS) was a nightmare. I hear that MS Build announced future plans to imporive on this. for at the time, this wasn't feasible.</p>
+<p>Trying to design a Xamarin.Forms app quickly became impractical due to it's lack of design flexibility. That paired with bizzar quirks of OIC itself, a specification that was designed to only work with existing products prodiced by members of the OCF alliance. Not actually intended for everyday household items. These factors became frustrating and lead me to rethink my requirements and start again.</p>
+<h4 id="more-to-follow-stay-tuned"><a class="toclink" href="#more-to-follow-stay-tuned">More to Follow. Stay Tuned</a></h4>
+  </div>
+  <hr>
+
+  </div>
+  <footer class="container text-center">
+  
+<button type="button" class="top btn btn-outline-dark" onclick="window.scrollTo(0, 0)">
+  <i class="fa  fa-chevron-up" aria-hidden="true"></i>
+  Top
+</button>
+<div class="contact">
+    <a href="https://twitter.com/NZSmartie"><i class="fa fa-twitter" aria-hidden="true"></i><span class="sr-only">My Twitter</span></a>
+    <a href="https://github.com/NZSmartie"><i class="fa fa-github" aria-hidden="true"></i><span class="sr-only">My Github</span></a>
+    <a href="https://keybase.io/nzsmartie"><i class="fa fa-keybase" aria-hidden="true"></i><span class="sr-only">My Keybase</span></a>
+    <a href="https://hackaday.io/NZSmartie"><i class="fa fa-hackaday" aria-hidden="true"></i><span class="sr-only">My Hack A Day I O Profile</span></a>
+</div>
+
+    <p class="meta text-right">
+      Proudly built with <a href="https://getstatik.com/">Statik</a>
+      <br />
+      and hosted on <a href="https://help.github.com/articles/what-is-github-pages/">GitHub Pages</a>
+    </p>
+    
+
+  </footer>
+</body>
+</html>
